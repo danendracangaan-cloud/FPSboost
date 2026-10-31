@@ -75,11 +75,16 @@ jobs:
           APP_ABI      := armeabi-v7a
           APP_PLATFORM := android-21
           APP_STL      := c++_static
+          APP_CPPFLAGS += -I/tmp/aml -I/tmp/aml/include
           SRC_EOF
       - name: Ambil header AML
         run: |
           git clone --depth 1 https://github.com/RusJJ/AndroidModLoader /tmp/aml
-          cp -r /tmp/aml/include/* include/
+          find /tmp/aml -name amlmod.h
+          AMLH=$(find /tmp/aml -name amlmod.h | head -n 1)
+          test -n "$AMLH"
+          mkdir -p include/mod
+          cp -r "$(dirname "$AMLH")"/* include/mod/
       - name: Build
         run: $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=jni/Android.mk NDK_APPLICATION_MK=jni/Application.mk
       - uses: actions/upload-artifact@v4
