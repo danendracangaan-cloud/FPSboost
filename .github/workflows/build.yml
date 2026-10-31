@@ -30,7 +30,7 @@ jobs:
               for (int i = 0; i < 60 && !rsGlobal; ++i)
               {
                   sleep(1);
-                  rsGlobal = aml->GetSym(hGTASA, "RsGlobal");
+                  rsGlobal = (void*)aml->GetSym(hGTASA, "RsGlobal");
               }
               if (!rsGlobal) { logger->Error("FPSBoost: simbol RsGlobal tidak ketemu"); return nullptr; }
 
