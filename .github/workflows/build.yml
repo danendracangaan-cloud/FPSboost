@@ -65,7 +65,7 @@ jobs:
           LOCAL_PATH := $(call my-dir)
           include $(CLEAR_VARS)
           LOCAL_MODULE    := FPSBoost
-          LOCAL_SRC_FILES := fpsboost.cpp
+          LOCAL_SRC_FILES := fpsboost.cpp ../include/mod/logger.cpp ../include/mod/config.cpp
           LOCAL_C_INCLUDES += $(LOCAL_PATH)/../include
           LOCAL_CPPFLAGS  += -std=c++17 -O2 -fvisibility=hidden
           LOCAL_LDLIBS    := -llog
@@ -85,6 +85,7 @@ jobs:
           test -n "$AMLH"
           mkdir -p include/mod
           cp -r "$(dirname "$AMLH")"/* include/mod/
+          ls -R include/mod | head -40
       - name: Build
         run: $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=jni/Android.mk NDK_APPLICATION_MK=jni/Application.mk
       - uses: actions/upload-artifact@v4
