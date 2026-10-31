@@ -1,0 +1,59 @@
+name: Build FPSBoost
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tulis source code
+        run: |
+          mkdir -p jni include
+          cat > jni/fpsboost.cpp << 'SRC_EOF'
+          #include <mod/amlmod.h>
+          #include <mod/logger.h>
+          #include <mod/config.h>
+          #include <stdint.h>
+          #include <pthread.h>
+          #include <unistd.h>
+
+          MYMODCFG(net.gua.fpsboost, FPS Boost, 1.0, gua)
+
+          static void*   hGTASA  = nullptr;
+          static int     g_maxFPS = 60;
+
+          #define RSGLOBAL_MAXFPS_OFFSET 0x14
+
+          static void* FPSThread(void*)
+          {
+              void* rsGlobal = nullptr;
+              for (int i = 0; i < 60 && !rsGlobal; ++i)
+              {
+                  sleep(1);
+                  rsGlobal = aml->GetSym(hGTASA, "RsGlobal");
+              }
+              if (!rsGlobal) { logger->Error("FPSBoost: simbol RsGlobal tidak ketemu"); return nullptr; }
+
+              unsigned int* maxFPS = (unsigned int*)((uintptr_t)rsGlobal + RSGLOBAL_MAXFPS_OFFSET);
+              logger->Info("FPSBoost: maxFPS awal = %u", *maxFPS);
+
+              while (true)
+              {
+                  if (*maxFPS != (unsigned int)g_maxFPS) *maxFPS = g_maxFPS;
+                  sleep(1);
+              }
+              return nullptr;
+          }
+
+          extern "C" void OnModLoad()
+          {
+              logger->SetTag("FPSBoost");
+              g_maxFPS = cfg->Bind("MaxFPS", 60, "Main")->GetInt();
+              if (g_maxFPS < 30)  g_maxFPS = 30;
+              if (g_maxFPS > 120) g_maxFPS = 120;
+              cfg->Save();
+
+              hGTASA = aml->GetLibHandle("libGTASA.so");
+              if (!hGTASA) { logger->Error("libGTASA.so tidak ditemukan"); return; }
+
+              pthread_t t;
