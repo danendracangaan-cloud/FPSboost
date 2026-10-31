@@ -57,3 +57,32 @@ jobs:
               if (!hGTASA) { logger->Error("libGTASA.so tidak ditemukan"); return; }
 
               pthread_t t;
+              pthread_create(&t, nullptr, FPSThread, nullptr);
+              pthread_detach(t);
+          }
+          SRC_EOF
+          cat > jni/Android.mk << 'SRC_EOF'
+          LOCAL_PATH := $(call my-dir)
+          include $(CLEAR_VARS)
+          LOCAL_MODULE    := FPSBoost
+          LOCAL_SRC_FILES := fpsboost.cpp
+          LOCAL_C_INCLUDES += $(LOCAL_PATH)/../include
+          LOCAL_CPPFLAGS  += -std=c++17 -O2 -fvisibility=hidden
+          LOCAL_LDLIBS    := -llog
+          include $(BUILD_SHARED_LIBRARY)
+          SRC_EOF
+          cat > jni/Application.mk << 'SRC_EOF'
+          APP_ABI      := armeabi-v7a
+          APP_PLATFORM := android-21
+          APP_STL      := c++_static
+          SRC_EOF
+      - name: Ambil header AML
+        run: |
+          git clone --depth 1 https://github.com/RusJJ/AndroidModLoader /tmp/aml
+          cp -r /tmp/aml/include/* include/
+      - name: Build
+        run: $ANDROID_NDK_HOME/ndk-build NDK_PROJECT_PATH=. APP_BUILD_SCRIPT=jni/Android.mk NDK_APPLICATION_MK=jni/Application.mk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libFPSBoost
+          path: libs/armeabi-v7a/libFPSBoost.so
